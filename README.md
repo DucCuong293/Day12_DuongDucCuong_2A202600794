@@ -16,45 +16,46 @@
 
 ## 🏗️ Cấu Trúc Repository Bài Nộp
 
-Bài làm hoàn thiện nằm hoàn toàn trong thư mục **[06-lab-complete/](file:///e:/VinUni/Lab/Day%2012%20%E2%80%94%20Deployment%20%C4%90%C6%B0a%20Agent%20L%C3%AAn%20Cloud/day12_ha-tang-cloud_va_deployment/06-lab-complete/)**:
+Repository được cấu trúc theo các phần học phần từ **01 đến 05** để phục vụ học tập, và phần **06** là dự án hoàn chỉnh cuối cùng được triển khai thực tế. Cụ thể:
+
+### 📁 Các thư mục bài học (01-05)
+*   **[01-localhost-vs-production/](file:///e:/VinUni/Lab/Day%2012%20%E2%80%94%20Deployment%20%C4%90%C6%B0a%20Agent%20L%C3%AAn%20Cloud/day12_ha-tang-cloud_va_deployment/01-localhost-vs-production/)**: So sánh code chạy localhost thông thường (Develop) vs Code tuân thủ chuẩn 12-factor (Production).
+*   **[02-docker/](file:///e:/VinUni/Lab/Day%2012%20%E2%80%94%20Deployment%20%C4%90%C6%B0a%20Agent%20L%C3%AAn%20Cloud/day12_ha-tang-cloud_va_deployment/02-docker/)**: Đóng gói Dockerfile, tối ưu hóa kích thước image bằng Multi-stage build, và cấu hình cụm docker-compose (Agent + Redis + Nginx Load Balancer).
+*   **[03-cloud-deployment/](file:///e:/VinUni/Lab/Day%2012%20%E2%80%94%20Deployment%20%C4%90%C6%B0a%20Agent%20L%C3%AAn%20Cloud/day12_ha-tang-cloud_va_deployment/03-cloud-deployment/)**: Cấu hình deployment file (`railway.toml`, `render.yaml`) để chuẩn bị deploy tự động lên cloud.
+*   **[04-api-gateway/](file:///e:/VinUni/Lab/Day%2012%20%E2%80%94%20Deployment%20%C4%90%C6%B0a%20Agent%20L%C3%AAn%20Cloud/day12_ha-tang-cloud_va_deployment/04-api-gateway/)**: Bảo mật API với API Key/JWT authentication, Rate Limiter (giới hạn tần suất) và Cost Guard (giới hạn budget sử dụng LLM).
+*   **[05-scaling-reliability/](file:///e:/VinUni/Lab/Day%2012%20%E2%80%94%20Deployment%20%C4%90%C6%B0a%20Agent%20L%C3%AAn%20Cloud/day12_ha-tang-cloud_va_deployment/05-scaling-reliability/)**: Thiết kế Stateless Agent sử dụng cơ sở dữ liệu Redis ngoài để lưu giữ trạng thái (conversation history, rate limiter, budget), hỗ trợ Scale-out mượt mà.
+
+### 📁 Thư mục bài làm chính thức hoàn chỉnh (06-lab-complete)
+Toàn bộ các tính năng từ bài học 01-05 được tích hợp hoàn chỉnh và deploy thực tế lên Cloud nằm trong **[06-lab-complete/](file:///e:/VinUni/Lab/Day%2012%20%E2%80%94%20Deployment%20%C4%90%C6%B0a%20Agent%20L%C3%AAn%20Cloud/day12_ha-tang-cloud_va_deployment/06-lab-complete/)**:
 
 ```
 day12_ha-tang-cloud_va_deployment/
-├── 06-lab-complete/                  # Thư mục bài làm chính thức hoàn chỉnh
-│   ├── app/                          # Mã nguồn ứng dụng AI Agent (FastAPI)
-│   │   ├── main.py                   # Điểm khởi chạy chính & routing
-│   │   ├── config.py                 # 12-Factor App config (Pydantic settings)
-│   │   ├── auth.py                   # API Key Auth (hmac constant-time compare)
-│   │   ├── storage.py                # Redis client & conversation history
-│   │   ├── rate_limiter.py           # Sliding Window Rate Limiter (Sorted Set)
-│   │   ├── cost_guard.py             # Monthly Cost protection ($10/month limit)
-│   │   ├── schemas.py                # Pydantic request/response models
-│   │   └── logging_config.py         # Structured JSON logging
-│   ├── utils/
-│   │   └── mock_llm.py               # Mock LLM engine (không tốn phí API key)
-│   ├── tests/                        # Thư mục unit tests (Fakeredis)
-│   │   ├── conftest.py               # Thiết lập client fixtures
-│   │   └── test_app.py               # 18 test cases đã PASSED
-│   ├── screenshots/                  # Minh chứng chạy thực tế
-│   │   ├── dashboard.png             # Railway Dashboard
-│   │   ├── running.png               # Active Deploy Logs
-│   │   └── test.png                  # Terminal curl test
-│   ├── Dockerfile                    # Docker Multi-stage, non-root, slim (<200MB)
-│   ├── docker-compose.yml            # Stack: 3 Agent + Redis + Nginx Load Balancer
-│   ├── nginx.conf                    # Cấu hình reverse proxy & load balancing
-│   ├── requirements.txt              # Thư viện phụ thuộc
-│   ├── .env.example                  # Template cấu hình môi trường
-│   ├── .dockerignore                 # Danh sách bỏ qua khi build Docker
-│   ├── railway.toml                  # Cấu hình deploy Railway
-│   ├── render.yaml                   # Cấu hình Render Blueprint
-│   ├── check_production_ready.py     # Script kiểm tra chất lượng (100% Passed)
-│   ├── MISSION_ANSWERS.md            # Giải thích câu hỏi lý thuyết bài tập
-│   ├── DEPLOYMENT.md                 # Hướng dẫn chi tiết triển khai & test commands
-│   └── DAY12_FULL_REPORT.md          # Báo cáo kỹ thuật chi tiết (Tiếng Việt)
+├── 01-localhost-vs-production/          # So sánh localhost và production
+├── 02-docker/                           # Dockerfile & Docker Compose
+├── 03-cloud-deployment/                 # Cấu hình Cloud Deployment
+├── 04-api-gateway/                      # Bảo mật: Auth, Rate Limit, Cost Guard
+├── 05-scaling-reliability/              # Khả năng mở rộng: Stateless & Healthcheck
 │
-├── screenshots/                      # Thư mục lưu ảnh minh chứng (Root)
-└── DAY12_DELIVERY_CHECKLIST.md       # Checklist kiểm tra tự đánh giá nộp bài
+├── 06-lab-complete/                     # THƯ MỤC BÀI LÀM HOÀN CHỈNH
+│   ├── app/                             # FastAPI AI Agent Source Code
+│   │   ├── main.py, config.py, auth.py, storage.py, rate_limiter.py, cost_guard.py...
+│   ├── utils/                           # Mock LLM engine
+│   ├── tests/                           # Unit tests (18/18 cases PASSED)
+│   ├── screenshots/                     # Ảnh minh chứng chạy thực tế
+│   ├── Dockerfile                       # Multi-stage Dockerfile tối ưu (<200MB)
+│   ├── docker-compose.yml, nginx.conf   # Cấu hình cụm Load Balancing local
+│   ├── railway.toml, render.yaml        # File cấu hình deploy tự động
+│   ├── check_production_ready.py        # Script check chất lượng
+│   ├── MISSION_ANSWERS.md               # 📝 CÂU TRẢ LỜI CHO TẤT CẢ BÀI TẬP (Từ 01 đến 05)
+│   ├── DEPLOYMENT.md                    # Hướng dẫn test & URL Public
+│   └── DAY12_FULL_REPORT.md             # Báo cáo kỹ thuật tổng hợp chi tiết
+│
+├── screenshots/                         # Ảnh chụp minh chứng ở root
+└── DAY12_DELIVERY_CHECKLIST.md          # Tự đánh giá nộp bài theo rubric
 ```
+
+> [!NOTE]
+> Tất cả các câu hỏi lý thuyết và bài tập thực hành trong các thư mục `01-05` đã được giải quyết chi tiết và tổng hợp đầy đủ trong tệp câu trả lời chính thức tại **[06-lab-complete/MISSION_ANSWERS.md](file:///e:/VinUni/Lab/Day%2012%20%E2%80%94%20Deployment%20%C4%90%C6%B0a%20Agent%20L%C3%AAn%20Cloud/day12_ha-tang-cloud_va_deployment/06-lab-complete/MISSION_ANSWERS.md)**.
 
 ---
 
