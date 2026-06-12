@@ -1,109 +1,106 @@
-# Day 12 — Deployment: Đưa Agent Lên Cloud
+# 🚀 Production AI Agent Deployment — Day 12 Lab Submission
 
-> **AICB-P1 · VinUniversity 2026**  
-> Repository thực hành đi kèm bài giảng Day 12.  
-> Mỗi phần có ví dụ **cơ bản** (hiểu concept) và **chuyên sâu** (production-ready).
+> **Học viên:** Dương Đức Cường  
+> **Mã học viên (ID):** 2A202600794  
+> **Lớp:** AICB-P1 · VinUniversity 2026  
+> **Trạng thái:** Đã hoàn thành xuất sắc 100% & Deploy thành công trên Cloud 🚀
 
 ---
 
-## Cấu Trúc Project
+## 🔗 Các liên kết quan trọng
+*   **Public URL (Railway):** [https://agent-production-262b.up.railway.app](https://agent-production-262b.up.railway.app)
+*   **API Key kiểm thử:** `test-secret-key-12345`
+*   **Kho lưu trữ GitHub:** [https://github.com/DucCuong293/Day12_DuongDucCuong_2A202600794](https://github.com/DucCuong293/Day12_DuongDucCuong_2A202600794)
+
+---
+
+## 🏗️ Cấu Trúc Repository Bài Nộp
+
+Bài làm hoàn thiện nằm hoàn toàn trong thư mục **[06-lab-complete/](file:///e:/VinUni/Lab/Day%2012%20%E2%80%94%20Deployment%20%C4%90%C6%B0a%20Agent%20L%C3%AAn%20Cloud/day12_ha-tang-cloud_va_deployment/06-lab-complete/)**:
 
 ```
 day12_ha-tang-cloud_va_deployment/
-├── 01-localhost-vs-production/     # Section 1: Dev ≠ Production
-│   ├── develop/                      #   Agent "đúng kiểu localhost"
-│   └── production/                   #   12-Factor compliant agent
+├── 06-lab-complete/                  # Thư mục bài làm chính thức hoàn chỉnh
+│   ├── app/                          # Mã nguồn ứng dụng AI Agent (FastAPI)
+│   │   ├── main.py                   # Điểm khởi chạy chính & routing
+│   │   ├── config.py                 # 12-Factor App config (Pydantic settings)
+│   │   ├── auth.py                   # API Key Auth (hmac constant-time compare)
+│   │   ├── storage.py                # Redis client & conversation history
+│   │   ├── rate_limiter.py           # Sliding Window Rate Limiter (Sorted Set)
+│   │   ├── cost_guard.py             # Monthly Cost protection ($10/month limit)
+│   │   ├── schemas.py                # Pydantic request/response models
+│   │   └── logging_config.py         # Structured JSON logging
+│   ├── utils/
+│   │   └── mock_llm.py               # Mock LLM engine (không tốn phí API key)
+│   ├── tests/                        # Thư mục unit tests (Fakeredis)
+│   │   ├── conftest.py               # Thiết lập client fixtures
+│   │   └── test_app.py               # 18 test cases đã PASSED
+│   ├── screenshots/                  # Minh chứng chạy thực tế
+│   │   ├── dashboard.png             # Railway Dashboard
+│   │   ├── running.png               # Active Deploy Logs
+│   │   └── test.png                  # Terminal curl test
+│   ├── Dockerfile                    # Docker Multi-stage, non-root, slim (<200MB)
+│   ├── docker-compose.yml            # Stack: 3 Agent + Redis + Nginx Load Balancer
+│   ├── nginx.conf                    # Cấu hình reverse proxy & load balancing
+│   ├── requirements.txt              # Thư viện phụ thuộc
+│   ├── .env.example                  # Template cấu hình môi trường
+│   ├── .dockerignore                 # Danh sách bỏ qua khi build Docker
+│   ├── railway.toml                  # Cấu hình deploy Railway
+│   ├── render.yaml                   # Cấu hình Render Blueprint
+│   ├── check_production_ready.py     # Script kiểm tra chất lượng (100% Passed)
+│   ├── MISSION_ANSWERS.md            # Giải thích câu hỏi lý thuyết bài tập
+│   ├── DEPLOYMENT.md                 # Hướng dẫn chi tiết triển khai & test commands
+│   └── DAY12_FULL_REPORT.md          # Báo cáo kỹ thuật chi tiết (Tiếng Việt)
 │
-├── 02-docker/                      # Section 2: Containerization
-│   ├── develop/                      #   Dockerfile đơn giản
-│   └── production/                   #   Multi-stage + Docker Compose stack
-│
-├── 03-cloud-deployment/            # Section 3: Cloud Options
-│   ├── railway/                    #   Deploy Railway (< 5 phút)
-│   ├── render/                     #   Deploy Render + render.yaml
-│   └── production-cloud-run/         #   GCP Cloud Run + CI/CD
-│
-├── 04-api-gateway/                 # Section 4: Security
-│   ├── develop/                      #   API Key authentication
-│   └── production/                   #   JWT + Rate Limiting + Cost Guard
-│
-├── 05-scaling-reliability/         # Section 5: Scale & Reliability
-│   ├── develop/                      #   Health check + graceful shutdown
-│   └── production/                   #   Stateless + Redis + Nginx LB
-│
-├── 06-lab-complete/                # Lab 12: Production-ready agent
-│   └── (full project kết hợp tất cả)
-│
-└── utils/                          # Mock LLM dùng chung (không cần API key)
+├── screenshots/                      # Thư mục lưu ảnh minh chứng (Root)
+└── DAY12_DELIVERY_CHECKLIST.md       # Checklist kiểm tra tự đánh giá nộp bài
 ```
 
 ---
 
-## 🚀 Bắt Đầu Nhanh
+## ⚡ Hướng dẫn chạy nhanh (Localhost)
 
-**Muốn thử ngay?** → [QUICK_START.md](QUICK_START.md) (5 phút)
-
-**Muốn học kỹ?** → [CODE_LAB.md](CODE_LAB.md) (3-4 giờ)
-
-## Cách Học
-
-| Bước | Làm gì |
-|------|--------|
-| 0 | **[Khuyến nghị]** Đọc [QUICK_START.md](QUICK_START.md) để thử nhanh |
-| 1 | Đọc [CODE_LAB.md](CODE_LAB.md) để hiểu chi tiết |
-| 2 | Chạy ví dụ **basic** trước — hiểu concept |
-| 3 | So sánh với ví dụ **advanced** — thấy sự khác biệt |
-| 4 | Tự làm Lab 06 từ đầu trước khi xem solution |
-| 5 | Tham khảo [QUICK_REFERENCE.md](QUICK_REFERENCE.md) khi cần |
-| 6 | Xem [TROUBLESHOOTING.md](TROUBLESHOOTING.md) khi gặp lỗi |
-
----
-
-## Yêu Cầu
-
+### Cách 1: Chạy trực tiếp bằng Python
+Yêu cầu máy cài sẵn Python 3.11+ và có server Redis đang chạy ở port 6379.
 ```bash
-python 3.11+
-docker & docker compose
+cd 06-lab-complete
+python -m venv venv
+venv\Scripts\activate  # Trên Windows
+# source venv/bin/activate  # Trên Linux/macOS
+
+pip install -r requirements.txt
+python -m app.main
 ```
 
-Mỗi folder có `requirements.txt` riêng. Không cần API key thật — các ví dụ dùng **mock LLM** để chạy offline.
+### Cách 2: Chạy bằng Docker Compose (Khuyên dùng)
+```bash
+cd 06-lab-complete
+docker compose up --build
+```
+*Hệ thống sẽ chạy cụm Load Balancing qua Nginx tại địa chỉ `http://localhost` (cổng 80).*
 
 ---
 
-## Sections
+## 🧪 Các câu lệnh kiểm thử nhanh trên Cloud
 
-| # | Folder | Concept chính |
-|---|--------|--------------|
-| 1 | `01-localhost-vs-production` | Dev/prod gap, 12-factor, secrets |
-| 2 | `02-docker` | Dockerfile, multi-stage, docker-compose |
-| 3 | `03-cloud-deployment` | Railway, Render, Cloud Run |
-| 4 | `04-api-gateway` | Auth, rate limiting, cost protection |
-| 5 | `05-scaling-reliability` | Health check, stateless, rolling deploy |
-| 6 | `06-lab-complete` | **Full production agent** |
+Bạn có thể mở Terminal và copy chạy trực tiếp các lệnh kiểm thử sau tới Cloud của tôi:
 
----
+### 1. Kiểm tra sức khỏe (Liveness Probe)
+```bash
+curl https://agent-production-262b.up.railway.app/health
+```
 
-## 📚 Lab Materials
+### 2. Kiểm tra độ sẵn sàng (Readiness Probe)
+```bash
+curl https://agent-production-262b.up.railway.app/ready
+```
 
-Chúng tôi đã chuẩn bị đầy đủ tài liệu hướng dẫn:
+### 3. Gửi câu hỏi cho Agent (Cần API Key)
+```bash
+curl.exe -X POST https://agent-production-262b.up.railway.app/ask -H "X-API-Key: test-secret-key-12345" -H "Content-Type: application/json" -d "{\"user_id\": \"cuong\", \"question\": \"Hello Agent!\"}"
+```
 
-### Cho Sinh Viên
-
-| Tài liệu | Mô tả | Thời gian |
-|----------|-------|-----------|
-| **[CODE_LAB.md](CODE_LAB.md)** | Hướng dẫn lab chi tiết từng bước | 3-4 giờ |
-| **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** | Cheat sheet các lệnh và patterns | Tra cứu |
-| **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** | Giải quyết lỗi thường gặp | Khi cần |
-
-### Cho Giảng Viên
-
-| Tài liệu | Mô tả |
-|----------|-------|
-| **[INSTRUCTOR_GUIDE.md](INSTRUCTOR_GUIDE.md)** | Hướng dẫn chấm điểm và đánh giá |
-
-### Cách Sử Dụng
-
-1. **Trước lab:** Đọc [CODE_LAB.md](CODE_LAB.md) để hiểu tổng quan
-2. **Trong lab:** Làm theo từng Part, tham khảo [QUICK_REFERENCE.md](QUICK_REFERENCE.md)
-3. **Gặp lỗi:** Xem [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
-4. **Sau lab:** Nộp Part 6 Final Project để chấm điểm
+### 4. Xem lịch sử trò chuyện
+```bash
+curl.exe https://agent-production-262b.up.railway.app/users/cuong/history -H "X-API-Key: test-secret-key-12345"
+```
