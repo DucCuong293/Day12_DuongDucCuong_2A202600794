@@ -1,100 +1,206 @@
-# Lab 12 — Complete Production Agent
+# 🚀 Production AI Agent — Day 12 Lab Complete
 
-Kết hợp TẤT CẢ những gì đã học trong 1 project hoàn chỉnh.
-
-## Checklist Deliverable
-
-- [x] Dockerfile (multi-stage, < 500 MB)
-- [x] docker-compose.yml (agent + redis)
-- [x] .dockerignore
-- [x] Health check endpoint (`GET /health`)
-- [x] Readiness endpoint (`GET /ready`)
-- [x] API Key authentication
-- [x] Rate limiting
-- [x] Cost guard
-- [x] Config từ environment variables
-- [x] Structured logging
-- [x] Graceful shutdown
-- [x] Public URL ready (Railway / Render config)
+> Production-ready AI Agent với FastAPI, Redis, Docker, Nginx Load Balancer.
 
 ---
 
-## Cấu Trúc
+## ⚡ Quick Start
+
+### Cách 1: Chạy local bằng Python
+
+```bash
+cd 06-lab-complete
+
+# 1. Tạo virtual environment
+python -m venv venv
+venv\Scripts\activate        # Windows
+# source venv/bin/activate   # macOS/Linux
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Copy và cấu hình env
+cp .env.example .env.local
+
+# 4. Chạy Redis (cần Docker hoặc Redis server local)
+docker run -d --name redis -p 6379:6379 redis:7-alpine
+
+# 5. Chạy app
+python -m app.main
+```
+
+App sẽ chạy tại `http://localhost:8000`.
+
+### Cách 2: Chạy bằng Docker Compose (Recommended)
+
+```bash
+cd 06-lab-complete
+
+# Build và chạy toàn bộ stack (agent + redis + nginx)
+docker compose up --build
+
+# App chạy tại http://localhost (port 80 qua Nginx)
+```
+
+### Cách 3: Scale 3 Instances
+
+```bash
+# Chạy 3 agent instances + Redis + Nginx LB
+docker compose up --build --scale agent=3
+
+# Verify load balancing
+for i in $(seq 1 5); do
+  curl -s http://localhost/health | python -m json.tool
+done
+# Header X-Served-By sẽ thay đổi → chứng tỏ load balancing hoạt động
+```
+
+---
+
+## 🧪 Test Endpoints
+
+### Health Check (không cần auth)
+```bash
+curl http://localhost/health
+# → {"status":"ok","version":"1.0.0",...}
+```
+
+### Readiness Check
+```bash
+curl http://localhost/ready
+# → {"ready":true,"redis":"connected"}
+```
+
+### Gửi câu hỏi (cần API key)
+```bash
+curl -X POST http://localhost/ask \
+  -H "X-API-Key: dev-key-change-me-in-production" \
+  -H "Content-Type: application/json" \
+  -d '{"user_id": "user1", "question": "What is Docker?"}'
+```
+
+### Xem conversation history
+```bash
+curl http://localhost/users/user1/history \
+  -H "X-API-Key: dev-key-change-me-in-production"
+```
+
+### Test authentication (sẽ bị reject)
+```bash
+curl -X POST http://localhost/ask \
+  -H "Content-Type: application/json" \
+  -d '{"user_id": "test", "question": "Hello"}'
+# → 401 Unauthorized
+```
+
+### Test rate limit
+```bash
+# Gửi 15 requests liên tục → request 11+ sẽ bị 429
+for i in $(seq 1 15); do echo "Request $i:"; curl -s -w "\n" \
+  -X POST http://localhost/ask \
+  -H "X-API-Key: dev-key-change-me-in-production" \
+  -H "Content-Type: application/json" \
+  -d "{\"user_id\": \"rate_test\", \"question\": \"test $i\"}"; done
+```
+
+---
+
+## 🏗 Architecture
+
+```
+Client → Nginx (port 80) → Agent ×N (port 8000) → Redis (port 6379)
+```
+
+| Component | Vai trò |
+|-----------|---------|
+| **Nginx** | Load balancer, reverse proxy, round-robin |
+| **Agent** | FastAPI app, stateless, scale horizontally |
+| **Redis** | Shared state: conversations, rate limits, budgets |
+
+---
+
+## 📁 File Structure
 
 ```
 06-lab-complete/
 ├── app/
-│   ├── main.py         # Entry point — kết hợp tất cả
-│   ├── config.py       # 12-factor config
-│   ├── auth.py         # API Key + JWT
-│   ├── rate_limiter.py # Rate limiting
-│   └── cost_guard.py   # Budget protection
-├── Dockerfile          # Multi-stage, production-ready
-├── docker-compose.yml  # Full stack
-├── railway.toml        # Deploy Railway
-├── render.yaml         # Deploy Render
-├── .env.example        # Template
-├── .dockerignore
-└── requirements.txt
+│   ├── __init__.py          # Package init
+│   ├── main.py              # FastAPI app, routing, middleware
+│   ├── config.py            # Env-based settings (pydantic-settings)
+│   ├── auth.py              # API key authentication
+│   ├── storage.py           # Redis client, conversation history
+│   ├── rate_limiter.py      # Sliding window rate limiter
+│   ├── cost_guard.py        # Monthly budget per user
+│   ├── schemas.py           # Pydantic request/response models
+│   └── logging_config.py    # Structured JSON logging
+├── utils/
+│   └── mock_llm.py          # Mock LLM (không cần API key)
+├── tests/
+│   ├── conftest.py          # Fixtures với fakeredis
+│   └── test_app.py          # 15+ test cases
+├── Dockerfile               # Multi-stage, non-root, <500MB
+├── docker-compose.yml       # Agent + Redis + Nginx
+├── nginx.conf               # Load balancer config
+├── requirements.txt         # Python dependencies
+├── .env.example             # Environment template
+├── .dockerignore            # Docker build exclusions
+├── railway.toml             # Railway deploy config
+├── render.yaml              # Render deploy config
+├── check_production_ready.py # Readiness checker
+├── MISSION_ANSWERS.md       # Câu trả lời exercises
+├── DEPLOYMENT.md            # Hướng dẫn deploy
+├── DAY12_FULL_REPORT.md     # Báo cáo chi tiết
+└── README.md                # File này
 ```
 
 ---
 
-## Chạy Local
+## 🚢 Deploy lên Cloud
 
+### Railway
 ```bash
-# 1. Setup
-cp .env.example .env
-
-# 2. Chạy với Docker Compose
-docker compose up
-
-# 3. Test
-curl http://localhost/health
-
-# 4. Lấy API key từ .env, test endpoint
-API_KEY=$(grep AGENT_API_KEY .env | cut -d= -f2)
-curl -H "X-API-Key: $API_KEY" \
-     -X POST http://localhost/ask \
-     -H "Content-Type: application/json" \
-     -d '{"question": "What is deployment?"}'
-```
-
----
-
-## Deploy Railway (< 5 phút)
-
-```bash
-# Cài Railway CLI
 npm i -g @railway/cli
-
-# Login và deploy
 railway login
 railway init
-railway variables set OPENAI_API_KEY=sk-...
+railway add --plugin redis
 railway variables set AGENT_API_KEY=your-secret-key
+railway variables set ENVIRONMENT=production
 railway up
-
-# Nhận public URL!
 railway domain
 ```
 
----
+### Render
+1. Push code lên GitHub
+2. Vào render.com → New → Blueprint
+3. Connect repo → Render đọc `render.yaml` tự động
+4. Kiểm tra env vars → Deploy
 
-## Deploy Render
-
-1. Push repo lên GitHub
-2. Render Dashboard → New → Blueprint
-3. Connect repo → Render đọc `render.yaml`
-4. Set secrets: `OPENAI_API_KEY`, `AGENT_API_KEY`
-5. Deploy → Nhận URL!
+Chi tiết xem [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ---
 
-## Kiểm Tra Production Readiness
+## ✅ Chạy Tests
 
 ```bash
-python check_production_ready.py
+# Unit tests (dùng fakeredis, không cần Redis server)
+python -X utf8 -m pytest tests/ -v
+
+# Production readiness checker
+python -X utf8 check_production_ready.py
+
+# Compile check
+python -m py_compile app/main.py
 ```
 
-Script này kiểm tra tất cả items trong checklist và báo cáo những gì còn thiếu.
+---
+
+## 🔒 Security Features
+
+- API Key authentication (`X-API-Key` header)
+- Rate limiting: 10 req/min per user (Redis sorted set)
+- Cost guard: $10/month per user budget
+- Security headers: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`
+- No hardcoded secrets
+- CORS configurable from env
+- Docs disabled in production
+- Non-root Docker user

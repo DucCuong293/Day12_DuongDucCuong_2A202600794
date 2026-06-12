@@ -1,16 +1,26 @@
-version: "3.9"
+# ============================================================
+# Production Stack: Agent + Redis + Nginx Load Balancer
+#
+# Chạy: docker compose up --build
+# Scale: docker compose up --scale agent=3
+# ============================================================
 
 services:
+
+  # ──────────────────────────────────────
+  # Agent — FastAPI application
+  # ──────────────────────────────────────
   agent:
     build: .
-    ports:
-      - "8000:8000"
     environment:
       - ENVIRONMENT=staging
       - APP_NAME=Production AI Agent
       - REDIS_URL=redis://redis:6379/0
-    env_file:
-      - .env.local
+      - RATE_LIMIT_PER_MINUTE=10
+      - MONTHLY_BUDGET_USD=10
+      - LOG_LEVEL=INFO
+      - AGENT_API_KEY=${AGENT_API_KEY:-dev-key-change-me-in-production}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
     depends_on:
       redis:
         condition: service_healthy
@@ -22,12 +32,42 @@ services:
       retries: 3
       start_period: 15s
     restart: unless-stopped
+    networks:
+      - agent_net
 
+  # ──────────────────────────────────────
+  # Redis — Shared state store
+  # ──────────────────────────────────────
   redis:
     image: redis:7-alpine
     command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 3s
       retries: 3
+    networks:
+      - agent_net
+
+  # ──────────────────────────────────────
+  # Nginx — Load Balancer
+  # ──────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - agent
+    networks:
+      - agent_net
+
+networks:
+  agent_net:
+    driver: bridge
+
+volumes:
+  redis_data:
